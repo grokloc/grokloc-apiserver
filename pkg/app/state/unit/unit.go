@@ -14,6 +14,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/env"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matthewhartstonge/argon2"
 )
@@ -31,6 +32,11 @@ func State() (*app.State, error) {
 
 	dbUrl, dbUrlOK := os.LookupEnv(app.PostgresAppUrlEnvKey)
 	if !dbUrlOK {
+		return nil, app.ErrorEnvVar
+	}
+
+	_, dbUrlParseErr := pgconn.ParseConfig(dbUrl)
+	if dbUrlParseErr != nil {
 		return nil, app.ErrorEnvVar
 	}
 
