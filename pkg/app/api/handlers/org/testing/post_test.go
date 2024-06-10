@@ -236,3 +236,33 @@ func (s *OrgSuite) TestPostNoMatchingEvent() {
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 }
+
+func (s *OrgSuite) TestPostConflict() {
+	ev := org.CreateEvent{
+		Name:             safe.TrustedVarChar(security.RandString()),
+		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
+		OwnerEmail:       safe.TrustedVarChar(security.RandString()),
+		OwnerPassword:    safe.TrustedPassword(security.RandString()),
+		Role:             s.st.DefaultRole,
+	}
+	bs, bsErr := json.Marshal(ev)
+	require.NoError(s.T(), bsErr)
+	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	require.NoError(s.T(), urlErr)
+	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, postErr := s.c.Do(req)
+	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+
+	// resend with org name already in use
+	req, reqErr = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, postErr = s.c.Do(req)
+	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusConflict, resp.StatusCode)
+}

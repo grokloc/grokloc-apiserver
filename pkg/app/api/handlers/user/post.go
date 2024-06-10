@@ -11,6 +11,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
 func Post(st *app.State) http.HandlerFunc {
@@ -68,6 +69,11 @@ func Post(st *app.State) http.HandlerFunc {
 			st.VersionKey,
 		)
 		if createErr != nil {
+			if createErr == models.ErrConflict {
+				logger.Debug("create err", "err", createErr)
+				http.Error(w, "email already in use in org", http.StatusConflict)
+				return
+			}
 			logger.Error("create err", "err", createErr)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return

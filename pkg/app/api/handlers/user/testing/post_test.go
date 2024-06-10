@@ -268,3 +268,37 @@ func (s *UserSuite) TestPostNoMatchingEvent() {
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 }
+
+func (s *UserSuite) TestPostConflict() {
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
+	require.NoError(s.T(), oErr)
+	ev := user.CreateEvent{
+		DisplayName: safe.TrustedVarChar(security.RandString()),
+		Email:       safe.TrustedVarChar(security.RandString()),
+		Org:         o.ID,
+		Password:    safe.TrustedPassword(security.RandString()),
+	}
+	bs, bsErr := json.Marshal(ev)
+	require.NoError(s.T(), bsErr)
+	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user")
+	require.NoError(s.T(), urlErr)
+	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, postErr := s.c.Do(req)
+	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+
+	// resend with user email already in use in org
+	req, reqErr = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, postErr = s.c.Do(req)
+	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusConflict, resp.StatusCode)
+}

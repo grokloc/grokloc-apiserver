@@ -10,6 +10,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
 // Post creates an org.
@@ -58,6 +59,11 @@ func Post(st *app.State) http.HandlerFunc {
 		)
 
 		if createErr != nil {
+			if createErr == models.ErrConflict {
+				logger.Debug("create org", "err", createErr)
+				http.Error(w, "org name in use", http.StatusConflict)
+				return
+			}
 			logger.Error("create org", "err", createErr)
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
