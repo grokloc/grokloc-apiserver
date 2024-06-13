@@ -3,16 +3,18 @@ package client
 import (
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/google/uuid"
-	//"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 )
 
 type Client struct {
 	id, apiSecret uuid.UUID
 	c             *http.Client
-	// tok           *token.JSONToken
-	u *url.URL
+	u             *url.URL
+	token         string
+	tokenTime     time.Time
 }
 
 func New(id, apiSecret, apiUrl string, c *http.Client) (*Client, error) {
@@ -40,4 +42,18 @@ func New(id, apiSecret, apiUrl string, c *http.Client) (*Client, error) {
 		client.c = &http.Client{}
 	}
 	return &client, nil
+}
+
+func (c *Client) RefreshToken() error {
+	if len(c.token) != 0 &&
+		time.Since(c.tokenTime).Seconds() > float64(jwt.Expiration) {
+		return nil
+	}
+
+	// tokenReqUrl
+	_, tokenReqUrlErr := url.Parse(c.u.String() + "/token")
+	if tokenReqUrlErr != nil {
+		return tokenReqUrlErr
+	}
+	return nil
 }
