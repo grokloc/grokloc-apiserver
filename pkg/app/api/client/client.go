@@ -1,34 +1,41 @@
 package client
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 )
 
 type Client struct {
-	id, apiSecret uuid.UUID
-	c             *http.Client
-	u             *url.URL
-	token         string
-	tokenTime     time.Time
+	id        models.ID
+	apiSecret safe.VarChar
+	c         *http.Client
+	u         *url.URL
+	token     string
+	tokenTime time.Time
 }
 
-func New(id, apiSecret, apiUrl string, c *http.Client) (*Client, error) {
+func New(idStr, apiSecretStr, apiUrl string, c *http.Client) (*Client, error) {
 	client := Client{}
 
-	var uuidErr error
-	client.id, uuidErr = uuid.Parse(id)
-	if uuidErr != nil {
-		return nil, uuidErr
+	id := new(models.ID)
+	idErr := id.Scan(idStr)
+	if idErr != nil {
+		return nil, idErr
 	}
-	client.apiSecret, uuidErr = uuid.Parse(apiSecret)
-	if uuidErr != nil {
-		return nil, uuidErr
+	client.id = *id
+
+	apiSecret, apiSecretErr := safe.NewVarChar(apiSecretStr)
+	if apiSecretErr != nil {
+		return nil, apiSecretErr
 	}
+	client.apiSecret = *apiSecret
 
 	var uErr error
 	client.u, uErr = url.Parse(apiUrl)
@@ -44,16 +51,33 @@ func New(id, apiSecret, apiUrl string, c *http.Client) (*Client, error) {
 	return &client, nil
 }
 
-func (c *Client) RefreshToken() error {
-	if len(c.token) != 0 &&
-		time.Since(c.tokenTime).Seconds() > float64(jwt.Expiration) {
+func (client *Client) RefreshToken() error {
+	if len(client.token) != 0 &&
+		time.Since(client.tokenTime).Seconds() > float64(jwt.Expiration) {
 		return nil
 	}
 
-	// tokenReqUrl
-	_, tokenReqUrlErr := url.Parse(c.u.String() + "/token")
+	tokenReqUrl, tokenReqUrlErr := url.Parse(client.u.String() + "/token")
 	if tokenReqUrlErr != nil {
 		return tokenReqUrlErr
+	}
+
+	tokenReqStr := jwt.EncodeTokenRequest(client.id, client.apiSecret.String())
+	req := http.Request{
+		URL:    tokenReqUrl,
+		Method: http.MethodPost,
+		Header: map[string][]string{
+			app.IDHeader:           {client.id.String()},
+			app.TokenRequestHeader: {tokenReqStr},
+		},
+	}
+
+	resp, postErr := client.c.Do(&req)
+	if postErr != nil {
+		return postErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("token request failed")
 	}
 	return nil
 }

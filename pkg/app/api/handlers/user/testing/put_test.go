@@ -125,6 +125,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 	}
 	resp, postErr := s.c.Do(&ownerReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -247,6 +248,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
