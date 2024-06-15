@@ -5,17 +5,16 @@ import (
 	"net/http"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 )
 
+type okResp struct {
+	RequestID string `json:"request_id"`
+}
+
 // Get provides an unauthenticated ping service.
-// Assumes request middleware.
 func Get() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, wErr := w.Write([]byte("OK:" + request.GetID(r)))
-		if wErr != nil {
-			request.GetLogger(r).Error("response write", "err", wErr)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
+		render.JSON(w, request.GetLogger(r), okResp{RequestID: request.GetID(r)})
 	}
 }

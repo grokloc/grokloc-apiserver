@@ -1,27 +1,33 @@
 package client
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 )
 
+const apiPath = "/api/"
+
 type Client struct {
 	id        models.ID
 	apiSecret safe.VarChar
 	c         *http.Client
-	u         *url.URL
+	baseUrl   *url.URL
+	apiUrl    *url.URL
 	token     string
 	tokenTime time.Time
 }
 
-func New(idStr, apiSecretStr, apiUrl string, c *http.Client) (*Client, error) {
+func New(idStr, apiSecretStr, apiUrl, apiVersion string, c *http.Client) (*Client, error) {
 	client := Client{}
 
 	id := new(models.ID)
@@ -38,7 +44,11 @@ func New(idStr, apiSecretStr, apiUrl string, c *http.Client) (*Client, error) {
 	client.apiSecret = *apiSecret
 
 	var uErr error
-	client.u, uErr = url.Parse(apiUrl)
+	client.baseUrl, uErr = url.Parse(apiUrl)
+	if uErr != nil {
+		return nil, uErr
+	}
+	client.apiUrl, uErr = url.Parse(apiUrl + apiPath + apiVersion)
 	if uErr != nil {
 		return nil, uErr
 	}
@@ -52,12 +62,13 @@ func New(idStr, apiSecretStr, apiUrl string, c *http.Client) (*Client, error) {
 }
 
 func (client *Client) RefreshToken() error {
+	// require a thirty second buffer factor for the token expiration
 	if len(client.token) != 0 &&
-		time.Since(client.tokenTime).Seconds() > float64(jwt.Expiration) {
+		time.Since(client.tokenTime).Seconds()+30.0 < float64(jwt.Expiration) {
 		return nil
 	}
 
-	tokenReqUrl, tokenReqUrlErr := url.Parse(client.u.String() + "/token")
+	tokenReqUrl, tokenReqUrlErr := url.Parse(client.baseUrl.String() + "/token")
 	if tokenReqUrlErr != nil {
 		return tokenReqUrlErr
 	}
@@ -79,5 +90,21 @@ func (client *Client) RefreshToken() error {
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("token request failed")
 	}
+	defer resp.Body.Close()
+	body, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return readErr
+	}
+
+	var tok token.JSONToken
+	umErr := json.Unmarshal(body, &tok)
+	if umErr != nil {
+		return umErr
+	}
+	client.token = tok.Token
+	return nil
+}
+
+func (client *Client) Ok() error {
 	return nil
 }

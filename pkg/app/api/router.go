@@ -33,6 +33,7 @@ func NewRouter(st *app.State) *chi.Mux {
 	})
 
 	// versioned api routes
+
 	// all require user+token validation
 	rtr.Route("/api/"+st.APIVersion, func(rtr chi.Router) {
 		rtr.Use(withuser.Middleware(st))
