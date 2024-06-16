@@ -2,7 +2,7 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,6 +14,15 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 )
+
+type ResponseErr struct {
+	StatusCode int
+	Msg        string
+}
+
+func (r ResponseErr) Error() string {
+	return fmt.Sprintf("error code: %d, msg: %v", r.StatusCode, r.Msg)
+}
 
 const apiPath = "/api/"
 
@@ -88,7 +97,7 @@ func (client *Client) RefreshToken() error {
 		return postErr
 	}
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("token request failed")
+		return ResponseErr{StatusCode: resp.StatusCode}
 	}
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
@@ -105,6 +114,39 @@ func (client *Client) RefreshToken() error {
 	return nil
 }
 
-func (client *Client) Ok() error {
+func (client *Client) OK() error {
+	resp, respErr := client.c.Get(client.baseUrl.String() + "/ok")
+	if respErr != nil {
+		return respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return ResponseErr{StatusCode: resp.StatusCode}
+	}
+	return nil
+}
+
+func (client *Client) AuthOK() error {
+	okUrl, okUrlErr := url.Parse(client.apiUrl.String() + "/ok")
+	if okUrlErr != nil {
+		return okUrlErr
+	}
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return refreshErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodGet, okUrl.String(), nil)
+	if reqErr != nil {
+		return reqErr
+	}
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return ResponseErr{StatusCode: resp.StatusCode}
+	}
 	return nil
 }
