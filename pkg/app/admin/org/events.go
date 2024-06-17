@@ -12,12 +12,13 @@ import (
 )
 
 type CreateEvent struct {
-	Name             safe.VarChar   `json:"name"`
-	OwnerDisplayName safe.VarChar   `json:"owner_display_name"`
-	OwnerEmail       safe.VarChar   `json:"owner_email"`
-	OwnerPassword    safe.Password  `json:"owner_password"`
-	Role             models.Role    `json:"role"`
-	argon2Config     *argon2.Config `json:"-"`
+	Name             safe.VarChar  `json:"name"`
+	OwnerDisplayName safe.VarChar  `json:"owner_display_name"`
+	OwnerEmail       safe.VarChar  `json:"owner_email"`
+	OwnerPassword    safe.Password `json:"owner_password"`
+	Role             models.Role   `json:"role"`
+	// argon2Config is modified internally, not for use by external callers
+	argon2Config *argon2.Config `json:"-"`
 }
 
 func NewCreateEvent(argon2Config *argon2.Config) (*CreateEvent, error) {

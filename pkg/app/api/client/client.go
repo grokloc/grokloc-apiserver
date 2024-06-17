@@ -130,15 +130,17 @@ func (client *Client) AuthOK() error {
 	if okUrlErr != nil {
 		return okUrlErr
 	}
-	refreshErr := client.RefreshToken()
-	if refreshErr != nil {
-		return refreshErr
-	}
 
 	req, reqErr := http.NewRequest(http.MethodGet, okUrl.String(), nil)
 	if reqErr != nil {
 		return reqErr
 	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return refreshErr
+	}
+
 	req.Header.Add(app.IDHeader, client.id.String())
 	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
 	resp, respErr := client.c.Do(req)
