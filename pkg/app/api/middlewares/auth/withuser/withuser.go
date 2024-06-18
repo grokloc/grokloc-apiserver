@@ -51,8 +51,6 @@ func newAuthLevel(authLevel int) (AuthLevel, error) {
 }
 
 // Middleware checks user and org for the incoming request.
-// These are set in the request logger.
-// Assumes request middleware.
 func Middleware(st *app.State) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
