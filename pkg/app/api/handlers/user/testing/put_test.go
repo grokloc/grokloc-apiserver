@@ -302,7 +302,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 	require.NoError(s.T(), putErr)
 	// bad request because the token used has not been refreshed
 	// since the API Secret was changed!
-	require.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
+	require.Equal(s.T(), http.StatusUnauthorized, resp.StatusCode)
 
 	// try to update display name again, but first get a new token
 	// first, refresh regularUser to get the new API Secret
