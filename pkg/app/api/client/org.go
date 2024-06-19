@@ -101,3 +101,87 @@ func (client *Client) ReadOrg(id models.ID) (*org.Org, error) {
 
 	return &o, nil
 }
+
+func (client *Client) UpdateOwner(id models.ID, owner models.ID) (*org.Org, error) {
+	updateOrgUrl, updateOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
+	if updateOrgUrlErr != nil {
+		return nil, updateOrgUrlErr
+	}
+
+	bs, bsErr := json.Marshal(org.UpdateOwnerEvent{Owner: owner})
+	if bsErr != nil {
+		return nil, bsErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodPut, updateOrgUrl.String(), bytes.NewReader(bs))
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return nil, refreshErr
+	}
+
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return nil, respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, ResponseErr{StatusCode: resp.StatusCode}
+	}
+
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	var o org.Org
+	decErr := dec.Decode(&o)
+	if decErr != nil {
+		return nil, decErr
+	}
+
+	return &o, nil
+}
+
+func (client *Client) UpdateStatus(id models.ID, status models.Status) (*org.Org, error) {
+	updateOrgUrl, updateOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
+	if updateOrgUrlErr != nil {
+		return nil, updateOrgUrlErr
+	}
+
+	bs, bsErr := json.Marshal(org.UpdateStatusEvent{Status: status})
+	if bsErr != nil {
+		return nil, bsErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodPut, updateOrgUrl.String(), bytes.NewReader(bs))
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return nil, refreshErr
+	}
+
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return nil, respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, ResponseErr{StatusCode: resp.StatusCode}
+	}
+
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	var o org.Org
+	decErr := dec.Decode(&o)
+	if decErr != nil {
+		return nil, decErr
+	}
+
+	return &o, nil
+}

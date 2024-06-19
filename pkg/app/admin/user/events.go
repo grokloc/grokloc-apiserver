@@ -69,5 +69,5 @@ type UpdatePasswordEvent struct {
 }
 
 type UpdateStatusEvent struct {
-	Status models.Status `json:"new_status"`
+	Status models.Status `json:"status"`
 }

@@ -63,9 +63,9 @@ func (ev *CreateEvent) UnmarshalJSON(bs []byte) error {
 }
 
 type UpdateOwnerEvent struct {
-	Owner models.ID `json:"new_owner"`
+	Owner models.ID `json:"owner"`
 }
 
 type UpdateStatusEvent struct {
-	Status models.Status `json:"new_status"`
+	Status models.Status `json:"status"`
 }
