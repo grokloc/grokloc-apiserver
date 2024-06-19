@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
@@ -49,5 +50,30 @@ func (s *ClientSuite) TestCreateOrgAsRegularUser() {
 	require.Error(s.T(), createErr)
 	var rErr ResponseErr
 	require.True(s.T(), errors.As(createErr, &rErr))
+	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestReadOrgAsRoot() {
+	_, readErr := s.rootClient.ReadOrg(s.org.ID)
+	require.NoError(s.T(), readErr)
+	_, readErr = s.rootClient.ReadOrg(models.NewID())
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestReadOrgAsOrgOwner() {
+	_, readErr := s.orgOwnerClient.ReadOrg(s.org.ID)
+	require.NoError(s.T(), readErr)
+	_, readErr = s.rootClient.ReadOrg(models.NewID())
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestReadOrgAsRegularUser() {
+	_, readErr := s.regularUserClient.ReadOrg(s.org.ID)
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }

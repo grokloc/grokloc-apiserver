@@ -64,3 +64,40 @@ func (client *Client) CreateOrg(
 
 	return &o, nil
 }
+
+func (client *Client) ReadOrg(id models.ID) (*org.Org, error) {
+	readOrgUrl, readOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
+	if readOrgUrlErr != nil {
+		return nil, readOrgUrlErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodGet, readOrgUrl.String(), nil)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return nil, refreshErr
+	}
+
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return nil, respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, ResponseErr{StatusCode: resp.StatusCode}
+	}
+
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	var o org.Org
+	decErr := dec.Decode(&o)
+	if decErr != nil {
+		return nil, decErr
+	}
+
+	return &o, nil
+}
