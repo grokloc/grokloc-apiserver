@@ -13,8 +13,6 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
-// Post creates an org.
-// Post assumes both withuser and withtoken middlewares.
 func Post(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)

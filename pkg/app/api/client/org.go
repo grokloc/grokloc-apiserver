@@ -50,6 +50,9 @@ func (client *Client) CreateOrg(
 	if respErr != nil {
 		return nil, respErr
 	}
+	if resp.StatusCode != http.StatusCreated {
+		return nil, ResponseErr{StatusCode: resp.StatusCode}
+	}
 
 	defer resp.Body.Close()
 	dec := json.NewDecoder(resp.Body)
