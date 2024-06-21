@@ -42,12 +42,15 @@ func Get(st *app.State) http.HandlerFunc {
 			return
 		}
 
-		scopedAuth := withuser.GetOrgScopedAuth(r, o)
-		if scopedAuth == withuser.AuthNone {
-			logger.Debug("not root or org owner",
-				"err", app.ErrorInadequateAuthorization)
-			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-			return
+		// router guarantees caller is root or org owner, but if org owner, must
+		// assure that calling user is owner of org specified in path
+		if withuser.GetAuth(r) == withuser.AuthOrg {
+			if withuser.GetUser(r).Org != o.ID {
+				logger.Debug("not owner of org",
+					"err", app.ErrorInadequateAuthorization)
+				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+				return
+			}
 		}
 
 		render.JSON(w, logger, o)

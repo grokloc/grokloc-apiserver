@@ -8,6 +8,7 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
@@ -20,6 +21,7 @@ type ClientSuite struct {
 	srv                                           *httptest.Server
 	st                                            *app.State
 	org                                           *org.Org
+	orgOwner, regularUser                         *user.User
 	rootClient, orgOwnerClient, regularUserClient *Client
 }
 
@@ -47,6 +49,8 @@ func (s *ClientSuite) SetupSuite() {
 	o, orgOwner, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), st)
 	require.NoError(s.T(), oErr)
 	s.org = o
+	s.orgOwner = orgOwner
+	s.regularUser = regularUser
 
 	s.orgOwnerClient, clientErr = New(
 		orgOwner.ID.String(),

@@ -102,7 +102,7 @@ func (client *Client) ReadOrg(id models.ID) (*org.Org, error) {
 	return &o, nil
 }
 
-func (client *Client) UpdateOwner(id models.ID, owner models.ID) (*org.Org, error) {
+func (client *Client) UpdateOrgOwner(id models.ID, owner models.ID) (*org.Org, error) {
 	updateOrgUrl, updateOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
 	if updateOrgUrlErr != nil {
 		return nil, updateOrgUrlErr
@@ -144,7 +144,7 @@ func (client *Client) UpdateOwner(id models.ID, owner models.ID) (*org.Org, erro
 	return &o, nil
 }
 
-func (client *Client) UpdateStatus(id models.ID, status models.Status) (*org.Org, error) {
+func (client *Client) UpdateOrgStatus(id models.ID, status models.Status) (*org.Org, error) {
 	updateOrgUrl, updateOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
 	if updateOrgUrlErr != nil {
 		return nil, updateOrgUrlErr
@@ -184,4 +184,33 @@ func (client *Client) UpdateStatus(id models.ID, status models.Status) (*org.Org
 	}
 
 	return &o, nil
+}
+
+func (client *Client) DeleteOrg(id models.ID) error {
+	deleteOrgUrl, deleteOrgUrlErr := url.Parse(client.apiUrl.String() + "/org/" + id.String())
+	if deleteOrgUrlErr != nil {
+		return deleteOrgUrlErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodDelete, deleteOrgUrl.String(), nil)
+	if reqErr != nil {
+		return reqErr
+	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return refreshErr
+	}
+
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return respErr
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return ResponseErr{StatusCode: resp.StatusCode}
+	}
+
+	return nil
 }

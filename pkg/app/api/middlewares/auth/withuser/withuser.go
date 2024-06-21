@@ -210,21 +210,6 @@ func GetUserScopedAuth(r *http.Request, u *user.User) AuthLevel {
 	return AuthNone
 }
 
-// GetOrgScopedauth determines if the auth level for request r
-// satisfies access for some entity owned by user.
-// Root can do anything.
-// If org owner, then must own org that is o.
-func GetOrgScopedAuth(r *http.Request, o *org.Org) AuthLevel {
-	auth := GetAuth(r)
-	if auth == AuthRoot {
-		return auth
-	}
-	if auth == AuthOrg && GetOrg(r).ID == o.ID {
-		return auth
-	}
-	return AuthNone
-}
-
 // RequireOneOf is a convenience middleware to allow
 // short-circuiting if expected auth levels are not satisfied.
 // Assumes request.Middleware and withuser.Middleware.

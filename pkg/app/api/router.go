@@ -52,7 +52,11 @@ func NewRouter(st *app.State) *chi.Mux {
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware())
-				rtr.Get("/", org.Get(st))
+				rtr.With(withuser.RequireOneOf(
+					withuser.AuthRoot,
+					withuser.AuthOrg,
+				)).
+					Get("/", org.Get(st))
 
 				rtr.Group(func(rtr chi.Router) {
 					rtr.Use(withuser.RequireOneOf(withuser.AuthRoot))
@@ -74,7 +78,7 @@ func NewRouter(st *app.State) *chi.Mux {
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware())
 
-				// Get, Put, Delete handlers call GetScopedAuth
+				// Get, Put, Delete handlers call GetUserScopedAuth
 				// to assert access
 				rtr.Get("/", user.Get(st))
 				rtr.Delete("/", user.Delete(st))

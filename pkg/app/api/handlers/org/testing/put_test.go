@@ -70,6 +70,37 @@ func (s *OrgSuite) TestPutAsRoot() {
 	dcErr = decoder.Decode(&oRead1)
 	require.NoError(s.T(), dcErr)
 	require.Equal(s.T(), regularUser.ID, oRead1.Owner)
+
+	// try nonexistant user as candidate owner
+	require.NoError(s.T(), urlErr)
+	evOwner = org.UpdateOwnerEvent{
+		Owner: models.NewID(),
+	}
+	bs, bsErr = json.Marshal(evOwner)
+	require.NoError(s.T(), bsErr)
+	req, reqErr = http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, putErr = s.c.Do(req)
+	require.NoError(s.T(), putErr)
+	require.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
+
+	// try nonexistant org
+	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + models.NewID().String())
+	require.NoError(s.T(), urlErr)
+	evOwner = org.UpdateOwnerEvent{
+		Owner: regularUser.ID,
+	}
+	bs, bsErr = json.Marshal(evOwner)
+	require.NoError(s.T(), bsErr)
+	req, reqErr = http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
+	require.NoError(s.T(), reqErr)
+	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
+	resp, putErr = s.c.Do(req)
+	require.NoError(s.T(), putErr)
+	require.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 }
 
 // TestPutAsOrgOwner demonstrates that org owner auth cannot update an org.
