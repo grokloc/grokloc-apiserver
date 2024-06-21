@@ -24,7 +24,7 @@ func (s *OrgSuite) TestGetAsRoot() {
 	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -70,7 +70,7 @@ func (s *OrgSuite) TestGetAsOrgOwner() {
 	umErr := json.Unmarshal(body, &ownerTok)
 	require.NoError(s.T(), umErr)
 	// now try the GET
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -88,7 +88,7 @@ func (s *OrgSuite) TestGetAsOrgOwner() {
 	require.NoError(s.T(), dcErr)
 
 	// ty to get an org not owned by owner
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + s.st.Root.Org.String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.st.Root.Org.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -127,7 +127,7 @@ func (s *OrgSuite) TestGetAsRegularUser() {
 	umErr := json.Unmarshal(body, &regularUserTok)
 	require.NoError(s.T(), umErr)
 	// now try the GET
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -139,7 +139,7 @@ func (s *OrgSuite) TestGetAsRegularUser() {
 }
 
 func (s *OrgSuite) TestGetNotFound() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + models.NewID().String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)

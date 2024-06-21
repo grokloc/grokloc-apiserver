@@ -31,7 +31,7 @@ func (s *OrgSuite) TestPostAsRoot() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -111,7 +111,7 @@ func (s *OrgSuite) TestPostAsOrgOwner() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -160,7 +160,7 @@ func (s *OrgSuite) TestPostAsRegularUser() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -206,7 +206,7 @@ func (s *OrgSuite) TestPostMalformedCreateEvent() {
 	for _, ev := range evs {
 		bs, bsErr := json.Marshal(ev)
 		require.NoError(s.T(), bsErr)
-		u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 		require.NoError(s.T(), urlErr)
 		req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 		require.NoError(s.T(), reqErr)
@@ -219,7 +219,7 @@ func (s *OrgSuite) TestPostMalformedCreateEvent() {
 }
 
 func (s *OrgSuite) TestPostNoMatchingEvent() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 
 	// make up a type that does not match any event
@@ -249,7 +249,7 @@ func (s *OrgSuite) TestPostConflict() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)

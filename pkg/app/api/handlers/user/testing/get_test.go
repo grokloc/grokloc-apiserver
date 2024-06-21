@@ -22,7 +22,7 @@ func (s *UserSuite) TestGetAsRoot() {
 	defer conn.Release()
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
@@ -81,7 +81,7 @@ func (s *UserSuite) TestGetAsOrgOwner() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), ownerTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -110,7 +110,7 @@ func (s *UserSuite) TestGetAsOrgOwner() {
 	require.Equal(s.T(), regularUser.Meta, usr.Meta)
 
 	// try to get a user (root) that org owner has no permission to access
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -150,7 +150,7 @@ func (s *UserSuite) TestGetAsRegularUser() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -179,7 +179,7 @@ func (s *UserSuite) TestGetAsRegularUser() {
 	require.Equal(s.T(), regularUser.Meta, usr.Meta)
 
 	// try to get a user (root) that regular user has no permission to access
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
 	req.Header.Add(app.IDHeader, regularUser.ID.String())
@@ -191,7 +191,7 @@ func (s *UserSuite) TestGetAsRegularUser() {
 }
 
 func (s *UserSuite) TestGetNotFound() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + models.NewID().String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)

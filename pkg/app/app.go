@@ -12,6 +12,7 @@ const (
 	IDHeader             = "x-grokloc-id"
 	TokenRequestHeader   = "x-grokloc-token-request"
 	MaxBodySize          = 8192
+	APIPath              = "/api/"
 )
 
 var ErrorEnvVar = errors.New("missing or malformed environment variable")

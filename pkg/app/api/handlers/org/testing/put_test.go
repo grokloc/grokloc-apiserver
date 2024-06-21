@@ -26,7 +26,7 @@ func (s *OrgSuite) TestPutAsRoot() {
 	o, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// set to inactive
@@ -87,7 +87,7 @@ func (s *OrgSuite) TestPutAsRoot() {
 	require.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 
 	// try nonexistant org
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + models.NewID().String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	evOwner = org.UpdateOwnerEvent{
 		Owner: regularUser.ID,
@@ -138,7 +138,7 @@ func (s *OrgSuite) TestPutAsOrgOwner() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -184,7 +184,7 @@ func (s *OrgSuite) TestPutAsRegularUser() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -196,7 +196,7 @@ func (s *OrgSuite) TestPutAsRegularUser() {
 }
 
 func (s *OrgSuite) TestPutNotFound() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + models.NewID().String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 
 	// set to inactive
@@ -222,7 +222,7 @@ func (s *OrgSuite) TestPutMalformedUpdateEvents() {
 	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// bad status update
@@ -263,7 +263,7 @@ func (s *OrgSuite) TestPutNoMatchingEvent() {
 	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// make up a type that does not match any event

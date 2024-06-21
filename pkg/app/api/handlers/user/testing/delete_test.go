@@ -24,7 +24,7 @@ func (s *UserSuite) TestDeleteAsRoot() {
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -70,7 +70,7 @@ func (s *UserSuite) TestDeleteAsOrgOwner() {
 	require.NotEmpty(s.T(), ownerTok.Token)
 
 	// try to set to inactive
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -117,7 +117,7 @@ func (s *UserSuite) TestDeleteAsRegularUser() {
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
 	// try to set to inactive
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -129,7 +129,7 @@ func (s *UserSuite) TestDeleteAsRegularUser() {
 }
 
 func (s *UserSuite) TestDeleteFound() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + models.NewID().String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
 	require.NoError(s.T(), reqErr)

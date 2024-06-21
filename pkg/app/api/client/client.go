@@ -24,7 +24,7 @@ func (r ResponseErr) Error() string {
 	return fmt.Sprintf("error code: %d, msg: %v", r.StatusCode, r.Msg)
 }
 
-const apiPath = "/api/"
+const apiPath = app.APIPath
 
 type Client struct {
 	id        models.ID
