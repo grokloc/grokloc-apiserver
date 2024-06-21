@@ -79,7 +79,7 @@ func Post(st *app.State) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Location", "/api/"+st.APIVersion+"/user/"+u.ID.String())
+		w.Header().Set("location", "/api/"+st.APIVersion+"/user/"+u.ID.String())
 		w.WriteHeader(http.StatusCreated)
 		render.JSON(w, logger, u)
 	}
