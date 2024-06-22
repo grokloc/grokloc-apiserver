@@ -24,8 +24,6 @@ func (r ResponseErr) Error() string {
 	return fmt.Sprintf("error code: %d, msg: %v", r.StatusCode, r.Msg)
 }
 
-const apiPath = app.APIPath
-
 type Client struct {
 	id        models.ID
 	apiSecret safe.VarChar
@@ -57,7 +55,7 @@ func New(idStr, apiSecretStr, apiUrl, apiVersion string, c *http.Client) (*Clien
 	if uErr != nil {
 		return nil, uErr
 	}
-	client.apiUrl, uErr = url.Parse(apiUrl + apiPath + apiVersion)
+	client.apiUrl, uErr = url.Parse(apiUrl + app.APIPath + apiVersion)
 	if uErr != nil {
 		return nil, uErr
 	}
