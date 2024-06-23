@@ -44,21 +44,7 @@ func Post(st *app.State) http.HandlerFunc {
 			return
 		}
 
-		bs, bsErr := json.Marshal(JSONToken{Token: token})
-		if tokenErr != nil {
-			logger.Error("jwt marshal", "err", bsErr)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_, wErr := w.Write(bs)
-		if wErr != nil {
-			logger.Error("response write", "err", wErr)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
 		// do not set http 201 since there is no server-side entity created
+		render.JSON(w, logger, JSONToken{Token: token})
 	}
 }
