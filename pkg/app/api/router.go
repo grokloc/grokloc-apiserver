@@ -12,6 +12,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/rs/cors"
 )
 
@@ -51,7 +52,7 @@ func NewRouter(st *app.State) *chi.Mux {
 				Post("/", org.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware())
+				rtr.Use(withmodel.Middleware(st, models.KindOrg))
 				rtr.With(withuser.RequireOneOf(
 					withuser.AuthRoot,
 					withuser.AuthOrg,
@@ -76,7 +77,7 @@ func NewRouter(st *app.State) *chi.Mux {
 				Post("/", user.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware())
+				rtr.Use(withmodel.Middleware(st, models.KindUser))
 
 				// Get, Put, Delete handlers call GetUserScopedAuth
 				// to assert access
