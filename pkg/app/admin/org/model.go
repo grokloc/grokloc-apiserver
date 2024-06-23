@@ -13,4 +13,14 @@ type Org struct {
 	Owner models.ID    `json:"owner"`
 }
 
+// GetID implements models.WithID.
+func (o *Org) GetID() models.ID {
+	return o.ID
+}
+
+// GetOrg implements models.WithOrg.
+func (o *Org) GetOrg() models.ID {
+	return o.GetID()
+}
+
 const SchemaVersion = 0

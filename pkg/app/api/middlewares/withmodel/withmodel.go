@@ -133,3 +133,13 @@ func GetModelWithID(r *http.Request) models.WithID {
 	}
 	return modelWithID
 }
+
+// GetModelAny returns the model object as any.
+// Panic indicates coding error.
+func GetModelAny(r *http.Request) any {
+	v := r.Context().Value(ModelKey)
+	if v == nil {
+		panic("retrieve modelObject from context")
+	}
+	return v
+}

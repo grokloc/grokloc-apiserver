@@ -25,4 +25,14 @@ type User struct {
 	encrypted         bool          `json:"-"` // internal state
 }
 
+// GetID implements models.WithID.
+func (u *User) GetID() models.ID {
+	return u.ID
+}
+
+// GetOrg implements models.WithOrg.
+func (u *User) GetOrg() models.ID {
+	return u.Org
+}
+
 const SchemaVersion = 0
