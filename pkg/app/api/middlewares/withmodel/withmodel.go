@@ -2,11 +2,14 @@ package withmodel
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
@@ -14,6 +17,10 @@ import (
 type IDType string
 
 var IDKey = IDType("modelID")
+
+type ModelType string
+
+var ModelKey = ModelType("modelObject")
 
 // Middleware extracts the /{id} set in the router and turns it into
 // a context variable of type models.ID.
@@ -36,7 +43,44 @@ func Middleware(st *app.State, kind models.Kind) func(http.Handler) http.Handler
 				return
 			}
 
+			acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
+			defer acquireCancel()
+			conn, connErr := st.RandomReplica().Acquire(acquireCtx)
+			if connErr != nil {
+				logger.Error("acquire replica conn", "err", connErr)
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+			defer conn.Release()
+
+			execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
+			defer execCtxCancel()
+
+			var readErr error
+			var readModel any
+			switch kind {
+			case models.KindOrg:
+				readModel, readErr = org.Read(execCtx, conn.Conn(), *pathID)
+			case models.KindUser:
+				readModel, readErr = user.Read(execCtx, conn.Conn(), st.VersionKey, *pathID)
+			default:
+				logger.Error("unknown kind", "err", fmt.Errorf("kind: %v", kind))
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+
+			if readErr != nil {
+				if readErr == models.ErrNotFound {
+					http.Error(w, "not found", http.StatusNotFound)
+					return
+				}
+				logger.Error("model read", "err", readErr)
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+
 			r = r.WithContext(context.WithValue(r.Context(), IDKey, *pathID))
+			r = r.WithContext(context.WithValue(r.Context(), ModelKey, readModel))
 
 			newLogger := logger.With(
 				slog.String("pathid", pathID.String()),
@@ -60,4 +104,32 @@ func GetID(r *http.Request) models.ID {
 		panic("assert modelID -> models.ID")
 	}
 	return modelID
+}
+
+// GetWithOrg returns the model object as a models.WithOrg instance.
+// Panic indicates coding error.
+func GetModelWithOrg(r *http.Request) models.WithOrg {
+	v := r.Context().Value(ModelKey)
+	if v == nil {
+		panic("retrieve modelObject from context")
+	}
+	modelWithOrg, a := v.(models.WithOrg)
+	if !a {
+		panic("assert modelObject -> models.WithOrg")
+	}
+	return modelWithOrg
+}
+
+// GetWithID returns the model object as a models.WithID instance.
+// Panic indicates coding error.
+func GetModelWithID(r *http.Request) models.WithID {
+	v := r.Context().Value(ModelKey)
+	if v == nil {
+		panic("retrieve modelObject from context")
+	}
+	modelWithID, a := v.(models.WithID)
+	if !a {
+		panic("assert modelObject -> models.WithID")
+	}
+	return modelWithID
 }
