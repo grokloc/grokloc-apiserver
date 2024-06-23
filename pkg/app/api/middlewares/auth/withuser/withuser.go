@@ -50,7 +50,10 @@ func newAuthLevel(authLevel int) (AuthLevel, error) {
 	}
 }
 
-// Middleware checks user and org for the incoming request.
+// Middleware checks user and org for the incoming request,
+// as indicated by the x-grokloc-id header.
+// Following this middleware, the caller's user and org
+// info are available from the request context.
 func Middleware(st *app.State) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {

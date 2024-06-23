@@ -1,13 +1,13 @@
 package token
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 )
 
