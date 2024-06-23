@@ -56,6 +56,7 @@ func Middleware(st *app.State, kind models.Kind) func(http.Handler) http.Handler
 			execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
 			defer execCtxCancel()
 
+			// read in the model object based on its kind
 			var readErr error
 			var readModel any
 			switch kind {
