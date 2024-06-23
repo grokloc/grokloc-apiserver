@@ -29,7 +29,7 @@ func (s *WithModelSuite) SetupSuite() {
 	rtr := chi.NewRouter()
 	rtr.Use(request.Middleware(st))
 	rtr.Route("/{id}", func(rtr chi.Router) {
-		rtr.Use(withmodel.Middleware())
+		rtr.Use(withmodel.Middleware(st, models.KindOrg))
 		rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
 			_ = withmodel.GetID(r)
 		})
@@ -40,9 +40,8 @@ func (s *WithModelSuite) SetupSuite() {
 func (s *WithModelSuite) TestPathID() {
 	client := http.Client{}
 
-	// ok - id is a models.ID
-	id := models.NewID()
-	resp, respErr := client.Get(s.srv.URL + "/" + id.String())
+	// ok - id is the org id which will be retrieved
+	resp, respErr := client.Get(s.srv.URL + "/" + s.st.Root.Org.String())
 	require.NoError(s.T(), respErr)
 	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 

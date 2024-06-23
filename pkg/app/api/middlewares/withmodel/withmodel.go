@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
@@ -16,7 +17,7 @@ var IDKey = IDType("modelID")
 
 // Middleware extracts the /{id} set in the router and turns it into
 // a context variable of type models.ID.
-func Middleware() func(http.Handler) http.Handler {
+func Middleware(st *app.State, kind models.Kind) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			logger := request.GetLogger(r)
