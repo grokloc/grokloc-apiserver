@@ -19,8 +19,9 @@ func RequireOneOf(levels ...withuser.AuthLevel) func(http.Handler) http.Handler 
 			satisfied := false
 			auth := withuser.GetAuth(r)
 
+			// no matter what requirements are in place, root
+			// can always access the resource
 			if auth == withuser.AuthRoot {
-				// root can do anything
 				satisfied = true
 			}
 
@@ -28,17 +29,19 @@ func RequireOneOf(levels ...withuser.AuthLevel) func(http.Handler) http.Handler 
 				for _, level := range levels {
 					if level == withuser.AuthOrg && auth == withuser.AuthOrg {
 						if withuser.GetOrg(r).GetOrg() == withmodel.GetModelWithOrg(r).GetOrg() {
+							// is org owner for org related to model resource
 							satisfied = true
 							break
 						}
 					} else if level == withuser.AuthUser && auth == withuser.AuthUser {
 						if withuser.GetUser(r).GetID() == withmodel.GetModelWithID(r).GetID() {
+							// model is the user themselves
 							satisfied = true
 							break
 						}
 					} else if level == withuser.AuthTeammate && auth == withuser.AuthUser {
 						if withuser.GetUser(r).GetOrg() == withmodel.GetModelWithOrg(r).GetOrg() {
-							// in same org
+							// in same org as model resource
 							satisfied = true
 							break
 						}
