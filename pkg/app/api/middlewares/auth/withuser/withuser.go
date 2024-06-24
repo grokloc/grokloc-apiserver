@@ -31,10 +31,11 @@ type AuthLevel int
 var ErrorAuthLevelInvalid = errors.New("auth level invalid")
 
 const (
-	AuthNone = AuthLevel(0)
-	AuthUser = AuthLevel(1)
-	AuthOrg  = AuthLevel(2)
-	AuthRoot = AuthLevel(3)
+	AuthNone     = AuthLevel(0)
+	AuthUser     = AuthLevel(1)
+	AuthOrg      = AuthLevel(2)
+	AuthRoot     = AuthLevel(3)
+	AuthTeammate = AuthLevel(4)
 )
 
 func newAuthLevel(authLevel int) (AuthLevel, error) {
