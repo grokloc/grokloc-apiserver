@@ -39,7 +39,7 @@ func RequireOneOf(levels ...withuser.AuthLevel) func(http.Handler) http.Handler 
 							satisfied = true
 							break
 						}
-					} else if level == withuser.AuthTeammate && auth == withuser.AuthUser {
+					} else if level == withuser.AuthPeer && auth == withuser.AuthUser {
 						if withuser.GetUser(r).GetOrg() == withmodel.GetModelWithOrg(r).GetOrg() {
 							// in same org as model resource
 							satisfied = true

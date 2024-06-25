@@ -33,7 +33,7 @@ func (s *OrgSuite) SetupSuite() {
 	s.srv = httptest.NewServer(rtr)
 	s.st = st
 
-	// make token request
+	// get root token
 	u, urlErr := url.Parse(s.srv.URL + "/token")
 	require.NoError(s.T(), urlErr)
 	tokenRequest := jwt.EncodeTokenRequest(s.st.Root.ID, s.st.Root.APISecret.String())
