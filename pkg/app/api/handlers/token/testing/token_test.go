@@ -61,6 +61,7 @@ func (s *TokenSuite) TestToken() {
 	client := http.Client{}
 	resp, postErr := client.Do(&req)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)

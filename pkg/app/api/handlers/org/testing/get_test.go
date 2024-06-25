@@ -63,6 +63,7 @@ func (s *OrgSuite) TestGetAsOrgOwner() {
 	}
 	resp, postErr := s.c.Do(&tokenReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -120,6 +121,7 @@ func (s *OrgSuite) TestGetAsRegularUser() {
 	}
 	resp, postErr := s.c.Do(&tokenReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)

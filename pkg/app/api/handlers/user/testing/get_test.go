@@ -73,6 +73,7 @@ func (s *UserSuite) TestGetAsOrgOwner() {
 	}
 	resp, postErr := s.c.Do(&ownerReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -142,6 +143,7 @@ func (s *UserSuite) TestGetAsRegularUser() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)

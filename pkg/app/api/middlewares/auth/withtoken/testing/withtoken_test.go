@@ -65,6 +65,7 @@ func (s *WithTokenSuite) TestValidAuth() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -110,6 +111,7 @@ func (s *WithTokenSuite) TestWrongID() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -143,6 +145,7 @@ func (s *WithTokenSuite) TestWrongAPISecret() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -184,6 +187,7 @@ func (s *WithTokenSuite) TestBadToken() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
