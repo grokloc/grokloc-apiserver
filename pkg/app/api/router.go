@@ -7,6 +7,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withauth"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withtoken"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
@@ -53,7 +54,7 @@ func NewRouter(st *app.State) *chi.Mux {
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware(st, models.KindOrg))
-				rtr.With(withuser.RequireOneOf(
+				rtr.With(withauth.RequireOneOf(
 					withuser.AuthRoot,
 					withuser.AuthOrg,
 				)).
