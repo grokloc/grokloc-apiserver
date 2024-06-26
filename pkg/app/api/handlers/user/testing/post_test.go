@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,10 +14,8 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
-	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -129,40 +126,10 @@ func (s *UserSuite) TestPostAsOrgOwner() {
 
 // TestPostAsRegularUser demonstrates that user auth cannot create a user.
 func (s *UserSuite) TestPostAsRegularUser() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	o, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	// make token request for regular user
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	regularUserTokenRequest := jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
-	regularUserReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {regularUser.ID.String()},
-			app.TokenRequestHeader: {regularUserTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&regularUserReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var regularUserTok token.JSONToken
-	umErr := json.Unmarshal(body, &regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), regularUserTok.Token)
-
-	// try to create a user in regularUser's org
 	ev := user.CreateEvent{
 		DisplayName: safe.TrustedVarChar(security.RandString()),
 		Email:       safe.TrustedVarChar(security.RandString()),
-		Org:         o.ID,
+		Org:         s.o.ID,
 		Password:    safe.TrustedPassword(security.RandString()),
 	}
 	bs, bsErr := json.Marshal(ev)
@@ -171,9 +138,9 @@ func (s *UserSuite) TestPostAsRegularUser() {
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
-	resp, postErr = s.c.Do(req)
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
+	resp, postErr := s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
 }
@@ -244,15 +211,10 @@ func (s *UserSuite) TestPostNoMatchingEvent() {
 }
 
 func (s *UserSuite) TestPostConflict() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
 	ev := user.CreateEvent{
 		DisplayName: safe.TrustedVarChar(security.RandString()),
 		Email:       safe.TrustedVarChar(security.RandString()),
-		Org:         o.ID,
+		Org:         s.o.ID,
 		Password:    safe.TrustedPassword(security.RandString()),
 	}
 	bs, bsErr := json.Marshal(ev)
