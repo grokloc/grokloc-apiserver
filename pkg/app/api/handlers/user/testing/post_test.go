@@ -26,17 +26,15 @@ func (s *UserSuite) TestPostAsRoot() {
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
-	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
 	ev := user.CreateEvent{
 		DisplayName: safe.TrustedVarChar(security.RandString()),
 		Email:       safe.TrustedVarChar(security.RandString()),
-		Org:         o.ID,
+		Org:         s.o.ID,
 		Password:    safe.TrustedPassword(security.RandString()),
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -45,7 +43,6 @@ func (s *UserSuite) TestPostAsRoot() {
 	resp, postErr := s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
-	// get response body (json serialized user)
 	decoder := json.NewDecoder(resp.Body)
 	decoder.DisallowUnknownFields()
 	var usr user.User
@@ -76,48 +73,23 @@ func (s *UserSuite) TestPostAsOrgOwner() {
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
-	o, owner, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	// make token request for org owner
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	ownerTokenRequest := jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
-	ownerReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {owner.ID.String()},
-			app.TokenRequestHeader: {ownerTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&ownerReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var ownerTok token.JSONToken
-	umErr := json.Unmarshal(body, &ownerTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), ownerTok.Token)
 
 	// try to create a user in owner's org
 	ev := user.CreateEvent{
 		DisplayName: safe.TrustedVarChar(security.RandString()),
 		Email:       safe.TrustedVarChar(security.RandString()),
-		Org:         o.ID,
+		Org:         s.o.ID,
 		Password:    safe.TrustedPassword(security.RandString()),
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
-	resp, postErr = s.c.Do(req)
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
+	resp, postErr := s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 	// get response body (json serialized user)
@@ -148,8 +120,8 @@ func (s *UserSuite) TestPostAsOrgOwner() {
 	require.NoError(s.T(), bsErr)
 	req, reqErr = http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
 	resp, postErr = s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
@@ -195,7 +167,7 @@ func (s *UserSuite) TestPostAsRegularUser() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String() + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -238,7 +210,7 @@ func (s *UserSuite) TestPostMalformedCreateEvent() {
 	for _, ev := range evs {
 		bs, bsErr := json.Marshal(ev)
 		require.NoError(s.T(), bsErr)
-		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
+		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
 		require.NoError(s.T(), urlErr)
 		req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 		require.NoError(s.T(), reqErr)
@@ -285,7 +257,7 @@ func (s *UserSuite) TestPostConflict() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)

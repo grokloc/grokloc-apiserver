@@ -61,10 +61,18 @@ func NewRouter(st *app.State) *chi.Mux {
 					Get("/", org.Get(st))
 
 				rtr.Group(func(rtr chi.Router) {
-					rtr.Use(withuser.RequireOneOf(withuser.AuthRoot))
+					rtr.Use(withauth.RequireOneOf(withuser.AuthRoot))
 					rtr.With(body.Middleware()).Put("/", org.Put(st))
 					rtr.Delete("/", org.Delete(st))
 				})
+
+				// create a user in an org
+				rtr.With(withauth.RequireOneOf(
+					withuser.AuthRoot,
+					withuser.AuthOrg,
+				)).
+					With(body.Middleware()).
+					Post("/user", user.Post(st))
 			})
 		})
 
