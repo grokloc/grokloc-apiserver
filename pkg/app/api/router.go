@@ -46,7 +46,7 @@ func NewRouter(st *app.State) *chi.Mux {
 
 		// org related
 		rtr.Route("/org", func(rtr chi.Router) {
-			rtr.With(withuser.RequireOneOf(
+			rtr.With(withauth.RequireOneOf(
 				withuser.AuthRoot,
 			)).
 				With(body.Middleware()).
