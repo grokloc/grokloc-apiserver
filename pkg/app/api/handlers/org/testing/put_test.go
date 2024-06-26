@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/google/uuid"
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
@@ -105,45 +103,18 @@ func (s *OrgSuite) TestPutAsRoot() {
 
 // TestPutAsOrgOwner demonstrates that org owner auth cannot update an org.
 func (s *OrgSuite) TestPutAsOrgOwner() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	o, owner, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	ownerTokenRequest := jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
-	ownerReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {owner.ID.String()},
-			app.TokenRequestHeader: {ownerTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&ownerReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var ownerTok token.JSONToken
-	umErr := json.Unmarshal(body, &ownerTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), ownerTok.Token)
-
 	// try to set to inactive
 	ev := org.UpdateStatusEvent{
 		Status: models.StatusInactive,
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
 	resp, putErr := s.c.Do(req)
 	require.NoError(s.T(), putErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
@@ -151,45 +122,18 @@ func (s *OrgSuite) TestPutAsOrgOwner() {
 
 // TestPutAsRegularUser demonstrates that user auth cannot update an org.
 func (s *OrgSuite) TestPutAsRegularUser() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	o, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	regularUserTokenRequest := jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
-	regularUserReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {regularUser.ID.String()},
-			app.TokenRequestHeader: {regularUserTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&regularUserReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var regularUserTok token.JSONToken
-	umErr := json.Unmarshal(body, &regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), regularUserTok.Token)
-
 	// try to set to inactive
 	ev := org.UpdateStatusEvent{
 		Status: models.StatusInactive,
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPut, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
 	resp, putErr := s.c.Do(req)
 	require.NoError(s.T(), putErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
@@ -215,14 +159,7 @@ func (s *OrgSuite) TestPutNotFound() {
 }
 
 func (s *OrgSuite) TestPutMalformedUpdateEvents() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	// create an org to PUT to
-	o, _, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// bad status update
