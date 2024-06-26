@@ -34,7 +34,7 @@ func (s *UserSuite) TestPostAsRoot() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -83,7 +83,7 @@ func (s *UserSuite) TestPostAsOrgOwner() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -167,7 +167,7 @@ func (s *UserSuite) TestPostAsRegularUser() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String() + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -210,7 +210,7 @@ func (s *UserSuite) TestPostMalformedCreateEvent() {
 	for _, ev := range evs {
 		bs, bsErr := json.Marshal(ev)
 		require.NoError(s.T(), bsErr)
-		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
+		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
 		require.NoError(s.T(), urlErr)
 		req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 		require.NoError(s.T(), reqErr)
@@ -257,7 +257,7 @@ func (s *UserSuite) TestPostConflict() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/user")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)

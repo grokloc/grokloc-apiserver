@@ -19,7 +19,7 @@ func (client *Client) CreateUser(
 	org models.ID,
 	password safe.Password,
 ) (*user.User, error) {
-	createUserUrl, createUserUrlErr := url.Parse(client.apiUrl.String() + "/org/" + org.String() + "/user")
+	createUserUrl, createUserUrlErr := url.Parse(client.apiUrl.String() + "/user")
 	if createUserUrlErr != nil {
 		return nil, createUserUrlErr
 	}

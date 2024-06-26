@@ -14,7 +14,6 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
 )
 
@@ -46,7 +45,28 @@ func Put(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
-		// read in user; needed to establish auth scope
+		// specific exceptions to these auth rules will follow for each update case below
+		auth := withuser.GetAuth(r)
+		authOK := auth == withuser.AuthRoot ||
+			// org owner, user to be updated is in org
+			auth == withuser.AuthOrg && withuser.GetOrg(r).GetID() == withmodel.GetModelWithOrg(r).GetOrg() ||
+			// user updating themselves
+			auth == withuser.AuthUser && withuser.GetUser(r).GetID() == withmodel.GetModelWithID(r).GetID()
+		if !authOK {
+			logger.Debug("expected auth level not satisfied",
+				"err", app.ErrorInadequateAuthorization)
+			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+			return
+		}
+
+		modelObject := withmodel.GetModelAny(r)
+		u, ok := modelObject.(*user.User)
+		if !ok {
+			logger.Error("coerce model to *user.User", "err", errors.New("withmodel middleware cached object not coerced to *user.User"))
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		// // read in user; needed to establish auth scope
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
 		defer acquireCancel()
 		conn, connErr := st.Master.Acquire(acquireCtx)
@@ -56,27 +76,6 @@ func Put(st *app.State) http.HandlerFunc {
 			return
 		}
 		defer conn.Release()
-
-		execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
-		defer execCtxCancel()
-		u, uErr := user.Read(execCtx, conn.Conn(), st.VersionKey, withmodel.GetID(r))
-		if uErr != nil {
-			if uErr == models.ErrNotFound {
-				http.Error(w, "not found", http.StatusNotFound)
-				return
-			}
-			logger.Error("user read", "err", uErr)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
-		scopedAuth := withuser.GetUserScopedAuth(r, u)
-		if scopedAuth == withuser.AuthNone {
-			logger.Debug("not root or org owner or own user",
-				"err", app.ErrorInadequateAuthorization)
-			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-			return
-		}
 
 		var updateStatusEvent user.UpdateStatusEvent
 		var updateAPISecretEvent user.UpdateAPISecretEvent
@@ -91,7 +90,7 @@ func Put(st *app.State) http.HandlerFunc {
 
 		if decodeToUpdateStatusEvent(bs, &updateStatusEvent) {
 			// only org owner or root can update a user status
-			if scopedAuth == withuser.AuthUser {
+			if auth == withuser.AuthUser {
 				logger.Debug("not root or org owner at status update",
 					"err", app.ErrorInadequateAuthorization)
 				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
@@ -112,7 +111,7 @@ func Put(st *app.State) http.HandlerFunc {
 		} else if decodeToUpdatePasswordEvent(bs, &updatePasswordEvent) {
 			// only the user can reset their own password, root and org owner
 			// cannot perform this operation
-			if scopedAuth != withuser.AuthUser {
+			if auth != withuser.AuthUser {
 				logger.Debug("not user at password update",
 					"err", app.ErrorInadequateAuthorization)
 				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)

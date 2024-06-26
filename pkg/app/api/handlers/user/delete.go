@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
@@ -17,6 +18,17 @@ func Delete(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
+		auth := withuser.GetAuth(r)
+		authOK := auth == withuser.AuthRoot ||
+			// org owner, user to be deleted is in org
+			auth == withuser.AuthOrg && withuser.GetOrg(r).GetID() == withmodel.GetModelWithOrg(r).GetOrg()
+		if !authOK {
+			logger.Debug("expected auth level not satisfied",
+				"err", app.ErrorInadequateAuthorization)
+			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+			return
+		}
+
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
 		defer acquireCancel()
 		conn, connErr := st.Master.Acquire(acquireCtx)
@@ -27,25 +39,11 @@ func Delete(st *app.State) http.HandlerFunc {
 		}
 		defer conn.Release()
 
-		execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
-		defer execCtxCancel()
-		u, uErr := user.Read(execCtx, conn.Conn(), st.VersionKey, withmodel.GetID(r))
-		if uErr != nil {
-			if uErr == models.ErrNotFound {
-				http.Error(w, "not found", http.StatusNotFound)
-				return
-			}
-			logger.Error("user read", "err", uErr)
+		modelObject := withmodel.GetModelAny(r)
+		u, ok := modelObject.(*user.User)
+		if !ok {
+			logger.Error("coerce model to *user.User", "err", errors.New("withmodel middleware cached object not coerced to *user.User"))
 			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
-		scopedAuth := withuser.GetUserScopedAuth(r, u)
-		// only root or the org owner can delete a user
-		if scopedAuth != withuser.AuthRoot && scopedAuth != withuser.AuthOrg {
-			logger.Debug("not root or org owner",
-				"err", app.ErrorInadequateAuthorization)
-			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
 			return
 		}
 

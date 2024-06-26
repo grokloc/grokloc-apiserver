@@ -7,6 +7,7 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
@@ -16,6 +17,14 @@ import (
 func Post(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
+
+		if withuser.GetAuth(r) != withuser.AuthRoot {
+
+			logger.Debug("expected auth level not satisfied",
+				"err", app.ErrorInadequateAuthorization)
+			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+			return
+		}
 
 		ev, evErr := org.NewCreateEvent(&st.Argon2Config)
 		if evErr != nil {

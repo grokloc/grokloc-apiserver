@@ -7,7 +7,6 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/user"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withauth"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withtoken"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
@@ -46,53 +45,29 @@ func NewRouter(st *app.State) *chi.Mux {
 
 		// org related
 		rtr.Route("/org", func(rtr chi.Router) {
-			rtr.With(withauth.RequireOneOf(
-				withuser.AuthRoot,
-			)).
-				With(body.Middleware()).
+			rtr.With(body.Middleware()).
 				Post("/", org.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware(st, models.KindOrg))
-				rtr.With(withauth.RequireOneOf(
-					withuser.AuthRoot,
-					withuser.AuthOrg,
-				)).
-					Get("/", org.Get(st))
-
-				rtr.Group(func(rtr chi.Router) {
-					rtr.Use(withauth.RequireOneOf(withuser.AuthRoot))
-					rtr.With(body.Middleware()).Put("/", org.Put(st))
-					rtr.Delete("/", org.Delete(st))
-				})
-
-				// create a user in an org
-				rtr.With(withauth.RequireOneOf(
-					withuser.AuthRoot,
-					withuser.AuthOrg,
-				)).
-					With(body.Middleware()).
-					Post("/user", user.Post(st))
+				rtr.Get("/", org.Get(st))
+				rtr.Delete("/", org.Delete(st))
+				rtr.With(body.Middleware()).
+					Put("/", org.Put(st))
 			})
 		})
 
 		// user related
 		rtr.Route("/user", func(rtr chi.Router) {
-			rtr.With(withuser.RequireOneOf(
-				withuser.AuthRoot,
-				withuser.AuthOrg,
-			)).
-				With(body.Middleware()).
+			rtr.With(body.Middleware()).
 				Post("/", user.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware(st, models.KindUser))
-
-				// Get, Put, Delete handlers call GetUserScopedAuth
-				// to assert access
 				rtr.Get("/", user.Get(st))
 				rtr.Delete("/", user.Delete(st))
-				rtr.With(body.Middleware()).Put("/", user.Put(st))
+				rtr.With(body.Middleware()).
+					Put("/", user.Put(st))
 			})
 		})
 	})
