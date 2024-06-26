@@ -3,13 +3,11 @@ package testing
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
@@ -43,40 +41,12 @@ func (s *OrgSuite) TestGetAsRoot() {
 }
 
 func (s *OrgSuite) TestGetAsOrgOwner() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	// create an org to GET
-	o, owner, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	tokenUrl, tokenUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenUrlErr)
-	tokenRequestValue := jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
-	tokenReq := http.Request{
-		URL:    tokenUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {owner.ID.String()},
-			app.TokenRequestHeader: {tokenRequestValue},
-		},
-	}
-	resp, postErr := s.c.Do(&tokenReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var ownerTok token.JSONToken
-	umErr := json.Unmarshal(body, &ownerTok)
-	require.NoError(s.T(), umErr)
-	// now try the GET
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
 	resp, getErr := s.c.Do(req)
 	require.NoError(s.T(), getErr)
 	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
@@ -85,7 +55,7 @@ func (s *OrgSuite) TestGetAsOrgOwner() {
 	decoder.DisallowUnknownFields()
 	oRead := org.Org{}
 	dcErr := decoder.Decode(&oRead)
-	require.Equal(s.T(), o.ID.String(), oRead.ID.String())
+	require.Equal(s.T(), s.o.ID.String(), oRead.ID.String())
 	require.NoError(s.T(), dcErr)
 
 	// ty to get an org not owned by owner
@@ -93,48 +63,20 @@ func (s *OrgSuite) TestGetAsOrgOwner() {
 	require.NoError(s.T(), urlErr)
 	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
 	resp, getErr = s.c.Do(req)
 	require.NoError(s.T(), getErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
 }
 
 func (s *OrgSuite) TestGetAsRegularUser() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	// create an org to GET
-	o, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	tokenUrl, tokenUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenUrlErr)
-	tokenRequestValue := jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
-	tokenReq := http.Request{
-		URL:    tokenUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {regularUser.ID.String()},
-			app.TokenRequestHeader: {tokenRequestValue},
-		},
-	}
-	resp, postErr := s.c.Do(&tokenReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var regularUserTok token.JSONToken
-	umErr := json.Unmarshal(body, &regularUserTok)
-	require.NoError(s.T(), umErr)
-	// now try the GET
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + o.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
 	resp, getErr := s.c.Do(req)
 	require.NoError(s.T(), getErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
