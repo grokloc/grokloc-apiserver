@@ -21,10 +21,16 @@ func RequireOneOf(levels ...withuser.AuthLevel) func(http.Handler) http.Handler 
 
 			// no matter what requirements are in place, root
 			// can always access the resource
+			// root is satisfied without checking a model,
+			// so level AuthRoot does not require withmodel
+			// middleware to be called prior
 			if auth == withuser.AuthRoot {
 				satisfied = true
 			}
 
+			// all other levels require inspecting a loaded model for
+			// authorization metadata to check, so withmodel middleware
+			// must be called prior if using any of the following levels
 			if !satisfied {
 				for _, level := range levels {
 					if level == withuser.AuthOrg && auth == withuser.AuthOrg {
