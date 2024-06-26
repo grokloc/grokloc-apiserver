@@ -19,7 +19,6 @@ func Post(st *app.State) http.HandlerFunc {
 		logger := request.GetLogger(r)
 
 		if withuser.GetAuth(r) != withuser.AuthRoot {
-
 			logger.Debug("expected auth level not satisfied",
 				"err", app.ErrorInadequateAuthorization)
 			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
