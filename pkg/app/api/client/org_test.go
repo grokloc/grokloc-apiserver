@@ -23,7 +23,7 @@ func (s *ClientSuite) TestCreateOrgAsRoot() {
 	require.NoError(s.T(), createErr)
 }
 
-// TestCreateAsOrgOwner demonstrates that org owner auth cannot create an org.
+// TestCreateOrgAsOrgOwner demonstrates that org owner auth cannot create an org.
 func (s *ClientSuite) TestCreateOrgAsOrgOwner() {
 	ev := org.CreateEvent{
 		Name:             safe.TrustedVarChar(security.RandString()),
@@ -39,7 +39,7 @@ func (s *ClientSuite) TestCreateOrgAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateAsRegularUser demonstrates that user auth cannot create an org.
+// TestCreateOrgAsRegularUser demonstrates that user auth cannot create an org.
 func (s *ClientSuite) TestCreateOrgAsRegularUser() {
 	ev := org.CreateEvent{
 		Name:             safe.TrustedVarChar(security.RandString()),

@@ -11,6 +11,8 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
 )
 
@@ -122,6 +124,26 @@ func (s *UserSuite) TestGetAsRegularUser() {
 
 	// try to get a user (root) that regular user has no permission to access
 	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
+	require.NoError(s.T(), urlErr)
+	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
+	require.NoError(s.T(), reqErr)
+	resp, getErr = s.c.Do(req)
+	require.NoError(s.T(), getErr)
+	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
+
+	// create another user in the same org, try to read it
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+	displayName := safe.TrustedVarChar(security.RandString())
+	email := safe.TrustedVarChar(security.RandString())
+	password, passwordErr := security.DerivePassword(security.RandString(), s.st.Argon2Config)
+	require.NoError(s.T(), passwordErr)
+	peerUser, createErr := user.Create(context.Background(), conn.Conn(), displayName, email, s.o.ID, *password, s.st.VersionKey)
+	require.NoError(s.T(), createErr)
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + peerUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
 	req.Header.Add(app.IDHeader, s.regularUser.ID.String())

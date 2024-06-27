@@ -64,3 +64,40 @@ func (client *Client) CreateUser(
 
 	return &u, nil
 }
+
+func (client *Client) ReadUser(id models.ID) (*user.User, error) {
+	readUserUrl, readUserUrlErr := url.Parse(client.apiUrl.String() + "/user/" + id.String())
+	if readUserUrlErr != nil {
+		return nil, readUserUrlErr
+	}
+
+	req, reqErr := http.NewRequest(http.MethodGet, readUserUrl.String(), nil)
+	if reqErr != nil {
+		return nil, reqErr
+	}
+
+	refreshErr := client.RefreshToken()
+	if refreshErr != nil {
+		return nil, refreshErr
+	}
+
+	req.Header.Add(app.IDHeader, client.id.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(client.token))
+	resp, respErr := client.c.Do(req)
+	if respErr != nil {
+		return nil, respErr
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, ResponseErr{StatusCode: resp.StatusCode}
+	}
+
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	var u user.User
+	decErr := dec.Decode(&u)
+	if decErr != nil {
+		return nil, decErr
+	}
+
+	return &u, nil
+}
