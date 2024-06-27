@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -95,5 +96,53 @@ func (s *ClientSuite) TestReadUserAsRegularUser() {
 	// try to read a different user in same org
 	_, readErr = s.regularUserClient.ReadUser(s.orgOwner.ID)
 	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestUpdateUserAPISecretAsRoot() {
+	_, updateErr := s.rootClient.UpdateUserAPISecret(s.regularUser.ID)
+	require.NoError(s.T(), updateErr)
+	// re-read user to get new API secret for regularUserClient
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+	u, readErr := user.Read(context.Background(), conn.Conn(), s.st.VersionKey, s.regularUser.ID)
+	require.NoError(s.T(), readErr)
+	s.regularUserClient.apiSecret = u.APISecret
+	require.NoError(s.T(), s.regularUserClient.newToken())
+}
+
+func (s *ClientSuite) TestUpdateUserAPISecretAsOrgOwner() {
+	_, updateErr := s.orgOwnerClient.UpdateUserAPISecret(s.regularUser.ID)
+	require.NoError(s.T(), updateErr)
+	// re-read user to get new API secret for regularUserClient
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+	u, readErr := user.Read(context.Background(), conn.Conn(), s.st.VersionKey, s.regularUser.ID)
+	require.NoError(s.T(), readErr)
+	s.regularUserClient.apiSecret = u.APISecret
+	require.NoError(s.T(), s.regularUserClient.newToken())
+
+	// try to update api secret of user in another org
+	_, updateErr = s.orgOwnerClient.UpdateUserAPISecret(s.st.Root.ID)
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(updateErr, &rErr))
+	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestUpdateUserAPISecretAsRegularUser() {
+	_, updateErr := s.regularUserClient.UpdateUserAPISecret(s.regularUser.ID)
+	require.NoError(s.T(), updateErr)
+
+	// try to update api secret of user in another org
+	_, updateErr = s.regularUserClient.UpdateUserAPISecret(s.st.Root.ID)
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(updateErr, &rErr))
+	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+
+	// try to update api secret of another user in same org
+	_, updateErr = s.regularUserClient.UpdateUserAPISecret(s.orgOwner.ID)
+	require.True(s.T(), errors.As(updateErr, &rErr))
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }

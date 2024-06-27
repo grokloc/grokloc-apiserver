@@ -141,6 +141,17 @@ func (client *Client) UpdateUserAPISecret(id models.ID) (*user.User, error) {
 		return nil, decErr
 	}
 
+	// token must be hard-refreshed as API secret has changed
+	// but only if the client is the same as the target id
+	// (i.e. client's own API secret has changed)
+	if client.id == id {
+		client.apiSecret = u.APISecret
+		tokenErr := client.newToken()
+		if tokenErr != nil {
+			return nil, tokenErr
+		}
+	}
+
 	return &u, nil
 }
 

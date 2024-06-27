@@ -74,7 +74,10 @@ func (client *Client) RefreshToken() error {
 		time.Since(client.tokenTime).Seconds()+30.0 < float64(jwt.Expiration) {
 		return nil
 	}
+	return client.newToken()
+}
 
+func (client *Client) newToken() error {
 	tokenReqUrl, tokenReqUrlErr := url.Parse(client.baseUrl.String() + "/token")
 	if tokenReqUrlErr != nil {
 		return tokenReqUrlErr

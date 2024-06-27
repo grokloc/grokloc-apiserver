@@ -105,6 +105,7 @@ func (s *UserSuite) TestPutAsRoot() {
 }
 
 func (s *UserSuite) TestPutAsOrgOwner() {
+	// create new org, regularUser to test these updates
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
@@ -230,6 +231,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 }
 
 func (s *UserSuite) TestPutAsRegularUser() {
+	// create new regularUser to test these updates
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
