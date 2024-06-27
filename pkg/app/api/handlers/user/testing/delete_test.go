@@ -20,7 +20,7 @@ func (s *UserSuite) TestDeleteAsRoot() {
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
-	// create an org to DELETE to
+	// create a user to DELETE to
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
@@ -42,6 +42,7 @@ func (s *UserSuite) TestDeleteAsRoot() {
 }
 
 func (s *UserSuite) TestDeleteAsOrgOwner() {
+	// make a new org owner with a regular user to delete
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
@@ -87,48 +88,20 @@ func (s *UserSuite) TestDeleteAsOrgOwner() {
 	require.Equal(s.T(), models.StatusInactive, uRead.Meta.Status)
 }
 
-// TestDeleteAsRegularUser demonstrates that user auth cannot update a user.
+// TestDeleteAsRegularUser demonstrates that user auth cannot delete a user.
 func (s *UserSuite) TestDeleteAsRegularUser() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	regularUserTokenRequest := jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
-	regularUserReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {regularUser.ID.String()},
-			app.TokenRequestHeader: {regularUserTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&regularUserReq)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var regularUserTok token.JSONToken
-	umErr := json.Unmarshal(body, &regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), regularUserTok.Token)
-
-	// try to set to inactive
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
 	resp, deleteErr := s.c.Do(req)
 	require.NoError(s.T(), deleteErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
 }
 
-func (s *UserSuite) TestDeleteFound() {
+func (s *UserSuite) TestDeleteNotFound() {
 	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodDelete, u.String(), nil)
