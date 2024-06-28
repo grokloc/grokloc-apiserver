@@ -146,3 +146,12 @@ func (s *ClientSuite) TestUpdateUserAPISecretAsRegularUser() {
 	require.True(s.T(), errors.As(updateErr, &rErr))
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
+
+func (s *ClientSuite) TestUpdateUserDisplayNameAsRoot() {
+	_, updateErr := s.rootClient.UpdateUserDisplayName(s.regularUser.ID, safe.TrustedVarChar(security.RandString()))
+	require.NoError(s.T(), updateErr)
+	_, updateErr = s.rootClient.UpdateUserDisplayName(models.NewID(), safe.TrustedVarChar(security.RandString()))
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(updateErr, &rErr))
+	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
+}
