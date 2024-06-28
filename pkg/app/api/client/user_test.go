@@ -47,7 +47,6 @@ func (s *ClientSuite) TestCreateUserAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateAsRegularUser demonstrates that user auth cannot create a user.
 func (s *ClientSuite) TestCreateUserAsRegularUser() {
 	ev := user.CreateEvent{
 		DisplayName: safe.TrustedVarChar(security.RandString()),
@@ -194,7 +193,11 @@ func (s *ClientSuite) TestUpdateUserDisplayNameAsRegularUser() {
 }
 
 func (s *ClientSuite) TestUpdateUserPasswordAsRoot() {
-	_, updateErr := s.rootClient.UpdateUserPassword(s.regularUser.ID, safe.TrustedPassword(security.RandString()))
+	_, updateErr := s.rootClient.UpdateUserPassword(s.st.Root.ID, safe.TrustedPassword(security.RandString()))
+	require.NoError(s.T(), updateErr)
+
+	// cannot change another user's password, even as root
+	_, updateErr = s.rootClient.UpdateUserPassword(s.regularUser.ID, safe.TrustedPassword(security.RandString()))
 	var rErr ResponseErr
 	require.True(s.T(), errors.As(updateErr, &rErr))
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
@@ -206,7 +209,11 @@ func (s *ClientSuite) TestUpdateUserPasswordAsRoot() {
 }
 
 func (s *ClientSuite) TestUpdateUserPasswordAsOrgOwner() {
-	_, updateErr := s.orgOwnerClient.UpdateUserPassword(s.regularUser.ID, safe.TrustedPassword(security.RandString()))
+	_, updateErr := s.orgOwnerClient.UpdateUserPassword(s.orgOwner.ID, safe.TrustedPassword(security.RandString()))
+	require.NoError(s.T(), updateErr)
+
+	// cannot change another user's password, even as owner of the org
+	_, updateErr = s.orgOwnerClient.UpdateUserPassword(s.regularUser.ID, safe.TrustedPassword(security.RandString()))
 	var rErr ResponseErr
 	require.True(s.T(), errors.As(updateErr, &rErr))
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)

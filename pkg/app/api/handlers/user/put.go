@@ -109,10 +109,10 @@ func Put(st *app.State) http.HandlerFunc {
 		} else if decodeToUpdateDisplayNameEvent(bs, &updateDisplayNameEvent) {
 			updateErr = u.UpdateDisplayName(updateCtx, conn.Conn(), st.VersionKey, updateDisplayNameEvent.DisplayName)
 		} else if decodeToUpdatePasswordEvent(bs, &updatePasswordEvent) {
-			// only the user can reset their own password, root and org owner
-			// cannot perform this operation
-			if auth != withuser.AuthUser {
-				logger.Debug("not user at password update",
+			// any user can change their own password, including root and org owner
+			canChangePassword := withuser.GetUser(r).GetID() == withmodel.GetModelWithID(r).GetID()
+			if !canChangePassword {
+				logger.Debug("not self user at password update",
 					"err", app.ErrorInadequateAuthorization)
 				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
 				return

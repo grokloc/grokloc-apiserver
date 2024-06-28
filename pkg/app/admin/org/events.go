@@ -36,6 +36,8 @@ func (ev CreateEvent) isEmpty() bool {
 		ev.Role.IsEmpty()
 }
 
+// UnmarshalJSON assumes OwnerPassword is cleartext and hashes it with argon2.
+// This minimizes the window to access the cleartext password accidentally.
 func (ev *CreateEvent) UnmarshalJSON(bs []byte) error {
 	if ev.argon2Config == nil {
 		panic("missing argon2 config")

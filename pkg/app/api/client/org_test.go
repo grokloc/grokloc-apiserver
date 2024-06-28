@@ -39,7 +39,6 @@ func (s *ClientSuite) TestCreateOrgAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateOrgAsRegularUser demonstrates that user auth cannot create an org.
 func (s *ClientSuite) TestCreateOrgAsRegularUser() {
 	ev := org.CreateEvent{
 		Name:             safe.TrustedVarChar(security.RandString()),
@@ -96,7 +95,6 @@ func (s *ClientSuite) TestUpdateOrgOwnerAsRoot() {
 	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
 }
 
-// TestCreateAsOrgOwner demonstrates that org owner auth cannot update an org.
 func (s *ClientSuite) TestUpdateOrgOwnerAsOrgOwner() {
 	_, updateErr := s.orgOwnerClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
 	var rErr ResponseErr
@@ -104,7 +102,6 @@ func (s *ClientSuite) TestUpdateOrgOwnerAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateAsRegularUser demonstrates that user auth cannot update an org.
 func (s *ClientSuite) TestUpdateOrgOwnerAsRegularUser() {
 	_, updateErr := s.regularUserClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
 	var rErr ResponseErr
@@ -126,7 +123,6 @@ func (s *ClientSuite) TestUpdateOrgStatusAsRoot() {
 	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
 }
 
-// TestCreateAsOrgOwner demonstrates that org owner auth cannot update an org.
 func (s *ClientSuite) TestUpdateOrgStatusAsOrgOwner() {
 	_, updateErr := s.orgOwnerClient.UpdateOrgStatus(s.org.ID, models.StatusInactive)
 	var rErr ResponseErr
@@ -134,7 +130,6 @@ func (s *ClientSuite) TestUpdateOrgStatusAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateAsRegularUser demonstrates that user auth cannot update an org.
 func (s *ClientSuite) TestUpdateOrgStatusAsRegularUser() {
 	_, updateErr := s.regularUserClient.UpdateOrgStatus(s.org.ID, models.StatusInactive)
 	var rErr ResponseErr
@@ -150,7 +145,6 @@ func (s *ClientSuite) TestDeleteOrgAsRoot() {
 	require.NoError(s.T(), updateErr)
 }
 
-// TestCreateAsOrgOwner demonstrates that org owner auth cannot delete an org.
 func (s *ClientSuite) TestDeleteOrgAsOrgOwner() {
 	updateErr := s.orgOwnerClient.DeleteOrg(s.org.ID)
 	var rErr ResponseErr
@@ -158,7 +152,6 @@ func (s *ClientSuite) TestDeleteOrgAsOrgOwner() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
-// TestCreateAsRegularUser demonstrates that user auth cannot delete an org.
 func (s *ClientSuite) TestDeleteOrgAsRegularUser() {
 	updateErr := s.regularUserClient.DeleteOrg(s.org.ID)
 	var rErr ResponseErr
