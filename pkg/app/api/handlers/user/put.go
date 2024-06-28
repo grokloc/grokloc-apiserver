@@ -66,7 +66,7 @@ func Put(st *app.State) http.HandlerFunc {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		// // read in user; needed to establish auth scope
+
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
 		defer acquireCancel()
 		conn, connErr := st.Master.Acquire(acquireCtx)
@@ -110,6 +110,7 @@ func Put(st *app.State) http.HandlerFunc {
 			updateErr = u.UpdateDisplayName(updateCtx, conn.Conn(), st.VersionKey, updateDisplayNameEvent.DisplayName)
 		} else if decodeToUpdatePasswordEvent(bs, &updatePasswordEvent) {
 			// any user can change their own password, including root and org owner
+			// (root and org owner cannot change any other passwords)
 			canChangePassword := withuser.GetUser(r).GetID() == withmodel.GetModelWithID(r).GetID()
 			if !canChangePassword {
 				logger.Debug("not self user at password update",
