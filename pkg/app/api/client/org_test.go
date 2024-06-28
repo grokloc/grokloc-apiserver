@@ -58,6 +58,7 @@ func (s *ClientSuite) TestCreateOrgAsRegularUser() {
 func (s *ClientSuite) TestReadOrgAsRoot() {
 	_, readErr := s.rootClient.ReadOrg(s.org.ID)
 	require.NoError(s.T(), readErr)
+
 	// try with an unknown org
 	_, readErr = s.rootClient.ReadOrg(models.NewID())
 	var rErr ResponseErr
@@ -87,6 +88,7 @@ func (s *ClientSuite) TestUpdateOrgOwnerAsRoot() {
 	require.NoError(s.T(), updateErr)
 	_, updateErr = s.rootClient.UpdateOrgOwner(s.org.ID, s.orgOwner.ID)
 	require.NoError(s.T(), updateErr)
+
 	// try with an unknown org
 	_, updateErr = s.rootClient.UpdateOrgOwner(models.NewID(), s.orgOwner.ID)
 	var rErr ResponseErr
@@ -116,6 +118,7 @@ func (s *ClientSuite) TestUpdateOrgStatusAsRoot() {
 	require.NoError(s.T(), updateErr)
 	_, updateErr = s.rootClient.UpdateOrgStatus(s.org.ID, models.StatusActive)
 	require.NoError(s.T(), updateErr)
+
 	// try with an unknown org
 	_, updateErr = s.rootClient.UpdateOrgStatus(models.NewID(), models.StatusActive)
 	var rErr ResponseErr
