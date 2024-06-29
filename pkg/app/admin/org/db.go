@@ -168,7 +168,7 @@ func Read(
 	return &o, nil
 }
 
-// Users returns the list of users in the org.
+// Users returns the list of user ids in the org.
 func Users(
 	ctx context.Context,
 	conn *pgx.Conn,

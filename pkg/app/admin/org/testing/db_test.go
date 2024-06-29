@@ -8,6 +8,7 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
@@ -84,7 +85,7 @@ func (s *DBSuite) TestCreate() {
 	ownerPassword, passwordErr := security.DerivePassword(security.RandString(), s.st.Argon2Config)
 	require.NoError(s.T(), passwordErr)
 
-	org, owner, createErr := org.Create(context.Background(),
+	o, owner, createErr := org.Create(context.Background(),
 		conn.Conn(),
 		name,
 		ownerDisplayName,
@@ -93,15 +94,62 @@ func (s *DBSuite) TestCreate() {
 		models.RoleTest,
 		s.st.VersionKey)
 	require.NoError(s.T(), createErr)
-	require.Equal(s.T(), models.RoleTest, org.Meta.Role)
-	require.Equal(s.T(), org.Meta.Role, owner.Meta.Role)
-	require.Equal(s.T(), org.Owner, owner.ID)
-	require.Equal(s.T(), owner.Org, org.ID)
-	require.Equal(s.T(), name, org.Name)
+	require.Equal(s.T(), models.RoleTest, o.Meta.Role)
+	require.Equal(s.T(), o.Meta.Role, owner.Meta.Role)
+	require.Equal(s.T(), o.Owner, owner.ID)
+	require.Equal(s.T(), owner.Org, o.ID)
+	require.Equal(s.T(), name, o.Name)
 	// DisplayName and Email are decrypted from Read(...)
 	require.Equal(s.T(), ownerDisplayName, owner.DisplayName)
 	require.Equal(s.T(), ownerEmail, owner.Email)
 	require.Equal(s.T(), *ownerPassword, owner.Password)
+}
+
+func (s *DBSuite) TestUsers() {
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+
+	name := safe.TrustedVarChar(security.RandString())
+	ownerDisplayName := safe.TrustedVarChar(security.RandString())
+	ownerEmail := safe.TrustedVarChar(security.RandString())
+	ownerPassword, passwordErr := security.DerivePassword(security.RandString(), s.st.Argon2Config)
+	require.NoError(s.T(), passwordErr)
+
+	o, owner, createErr := org.Create(context.Background(),
+		conn.Conn(),
+		name,
+		ownerDisplayName,
+		ownerEmail,
+		*ownerPassword,
+		models.RoleTest,
+		s.st.VersionKey)
+	require.NoError(s.T(), createErr)
+
+	userIDs, userIDsErr := org.Users(context.Background(), conn.Conn(), o.ID)
+	require.NoError(s.T(), userIDsErr)
+	require.Equal(s.T(), 1, len(userIDs))
+	require.Equal(s.T(), owner.ID, userIDs[0])
+
+	// add another user and retest
+	displayName := safe.TrustedVarChar(security.RandString())
+	email := safe.TrustedVarChar(security.RandString())
+	password, passwordErr := security.DerivePassword(security.RandString(), s.st.Argon2Config)
+	require.NoError(s.T(), passwordErr)
+
+	u, uCreateErr := user.Create(context.Background(), conn.Conn(), displayName, email, o.ID, *password, s.st.VersionKey)
+	require.NoError(s.T(), uCreateErr)
+	userIDs, userIDsErr = org.Users(context.Background(), conn.Conn(), o.ID)
+	require.NoError(s.T(), userIDsErr)
+	require.Equal(s.T(), 2, len(userIDs))
+	found := false
+	for _, v := range userIDs {
+		if v == u.ID {
+			found = true
+			break
+		}
+	}
+	require.True(s.T(), found)
 }
 
 func (s *DBSuite) TestUpdateStatus() {
