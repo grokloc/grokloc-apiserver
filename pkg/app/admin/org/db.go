@@ -168,6 +168,24 @@ func Read(
 	return &o, nil
 }
 
+// Users returns the list of users in the org.
+func Users(
+	ctx context.Context,
+	conn *pgx.Conn,
+	id models.ID,
+) ([]models.ID, error) {
+	const selectQuery = `select id from users where org = $1`
+	rows, queryErr := conn.Query(ctx, selectQuery, id)
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	ids, collectErr := pgx.CollectRows(rows, pgx.RowTo[models.ID])
+	if collectErr != nil {
+		return nil, collectErr
+	}
+	return ids, nil
+}
+
 // Refresh will re-initialize data fields after an update, typically
 // inside the same txn that performed the update.
 func (o *Org) Refresh(ctx context.Context, conn *pgx.Conn) error {

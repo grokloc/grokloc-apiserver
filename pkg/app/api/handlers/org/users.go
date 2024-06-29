@@ -1,6 +1,7 @@
 package org
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 )
 
-func Get(st *app.State) http.HandlerFunc {
+func Users(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
@@ -35,6 +36,19 @@ func Get(st *app.State) http.HandlerFunc {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
+
+		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
+		defer acquireCancel()
+		conn, connErr := st.RandomReplica().Acquire(acquireCtx)
+		if connErr != nil {
+			logger.Error("acquire replica conn", "err", connErr)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		defer conn.Release()
+
+		_, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
+		defer execCtxCancel()
 
 		render.JSON(w, logger, o)
 	}
