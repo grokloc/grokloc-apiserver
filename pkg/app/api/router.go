@@ -51,6 +51,7 @@ func NewRouter(st *app.State) *chi.Mux {
 			rtr.Route("/{id}", func(rtr chi.Router) {
 				rtr.Use(withmodel.Middleware(st, models.KindOrg))
 				rtr.Get("/", org.Get(st))
+				rtr.Get("/users", org.Users(st))
 				rtr.Delete("/", org.Delete(st))
 				rtr.With(body.Middleware()).
 					Put("/", org.Put(st))

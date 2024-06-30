@@ -150,6 +150,10 @@ func (s *DBSuite) TestUsers() {
 		}
 	}
 	require.True(s.T(), found)
+
+	// test for an org that doesn't exist
+	_, userIDsErr = org.Users(context.Background(), conn.Conn(), models.NewID())
+	require.Equal(s.T(), models.ErrNotFound, userIDsErr)
 }
 
 func (s *DBSuite) TestUpdateStatus() {

@@ -174,6 +174,11 @@ func Users(
 	conn *pgx.Conn,
 	id models.ID,
 ) ([]models.ID, error) {
+	// want to return ErrNotFound if org does not exist
+	_, readErr := Read(ctx, conn, id)
+	if readErr != nil {
+		return nil, readErr
+	}
 	const selectQuery = `select id from users where org = $1`
 	rows, queryErr := conn.Query(ctx, selectQuery, id)
 	if queryErr != nil {

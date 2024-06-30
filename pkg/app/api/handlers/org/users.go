@@ -12,6 +12,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
 func Users(st *app.State) http.HandlerFunc {
@@ -47,9 +48,17 @@ func Users(st *app.State) http.HandlerFunc {
 		}
 		defer conn.Release()
 
-		_, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
+		execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
 		defer execCtxCancel()
 
-		render.JSON(w, logger, o)
+		userIDs, userIDsErr := org.Users(execCtx, conn.Conn(), o.ID)
+		if userIDsErr != nil {
+			if userIDsErr == models.ErrNotFound {
+				http.Error(w, "not found", http.StatusNotFound)
+				return
+			}
+		}
+
+		render.JSON(w, logger, userIDs)
 	}
 }
