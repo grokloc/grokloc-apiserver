@@ -26,9 +26,9 @@ func (o *Org) Insert(ctx context.Context, conn *pgx.Conn) error {
       	`
 
 	result, err := conn.Exec(ctx, insertQuery,
-		o.ID.String(),
-		o.Name.String(),
-		o.Owner.String(),
+		o.ID,
+		o.Name,
+		o.Owner,
 		o.Meta.Role,
 		o.Meta.SchemaVersion,
 		o.Meta.Status,
@@ -225,10 +225,10 @@ func (o *Org) UpdateOwner(ctx context.Context,
 
 	result, updateErr := tx.Exec(ctx,
 		updateOwnerQuery,
-		newOwner.String(),
-		o.ID.String(),
+		newOwner,
+		o.ID,
 		models.StatusActive,
-		o.ID.String(),
+		o.ID,
 	)
 
 	if updateErr != nil {
