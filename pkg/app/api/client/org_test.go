@@ -81,6 +81,35 @@ func (s *ClientSuite) TestReadOrgAsRegularUser() {
 	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
 }
 
+func (s *ClientSuite) TestReadOrgUsersAsRoot() {
+	userIDs, readErr := s.rootClient.ReadOrgUsers(s.org.ID)
+	require.NoError(s.T(), readErr)
+	require.NotEqual(s.T(), 0, len(userIDs))
+
+	// try with an unknown org
+	_, readErr = s.rootClient.ReadOrgUsers(models.NewID())
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestReadOrgUsersAsOrgOwner() {
+	userIDs, readErr := s.orgOwnerClient.ReadOrgUsers(s.org.ID)
+	require.NoError(s.T(), readErr)
+	require.NotEqual(s.T(), 0, len(userIDs))
+	_, readErr = s.rootClient.ReadOrgUsers(models.NewID())
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
+}
+
+func (s *ClientSuite) TestReadOrgUsersAsRegularUser() {
+	_, readErr := s.regularUserClient.ReadOrg(s.org.ID)
+	var rErr ResponseErr
+	require.True(s.T(), errors.As(readErr, &rErr))
+	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+}
+
 func (s *ClientSuite) TestUpdateOrgOwnerAsRoot() {
 	// change regularUser to be owner, then undo the change
 	_, updateErr := s.rootClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
