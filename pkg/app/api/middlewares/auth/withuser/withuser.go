@@ -35,6 +35,7 @@ const (
 	AuthUser = AuthLevel(1)
 	AuthOrg  = AuthLevel(2)
 	AuthRoot = AuthLevel(3)
+	AuthPeer = AuthLevel(4)
 )
 
 func newAuthLevel(authLevel int) (AuthLevel, error) {
@@ -45,6 +46,8 @@ func newAuthLevel(authLevel int) (AuthLevel, error) {
 		return AuthOrg, nil
 	case 3:
 		return AuthRoot, nil
+	case 4:
+		return AuthPeer, nil
 	default:
 		return AuthNone, ErrorAuthLevelInvalid
 	}

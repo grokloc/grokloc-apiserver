@@ -121,6 +121,20 @@ func GetModelWithOrg(r *http.Request) models.WithOrg {
 	return modelWithOrg
 }
 
+// GetWithUser returns the model object as a models.WithUser instance.
+// Panic indicates coding error.
+func GetModelWithUser(r *http.Request) models.WithUser {
+	v := r.Context().Value(ModelKey)
+	if v == nil {
+		panic("retrieve modelObject from context")
+	}
+	modelWithUser, a := v.(models.WithUser)
+	if !a {
+		panic("assert modelObject -> models.WithUser")
+	}
+	return modelWithUser
+}
+
 // GetWithID returns the model object as a models.WithID instance.
 // Panic indicates coding error.
 func GetModelWithID(r *http.Request) models.WithID {

@@ -32,7 +32,6 @@ func (s *WithModelSuite) SetupSuite() {
 		rtr.Route("/{id}", func(rtr chi.Router) {
 			rtr.Use(withmodel.Middleware(st, models.KindOrg))
 			rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				_ = withmodel.GetModelWithID(r)
 				_ = withmodel.GetModelWithOrg(r)
 			})
 		})
@@ -41,8 +40,7 @@ func (s *WithModelSuite) SetupSuite() {
 		rtr.Route("/{id}", func(rtr chi.Router) {
 			rtr.Use(withmodel.Middleware(st, models.KindUser))
 			rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				_ = withmodel.GetModelWithID(r)
-				_ = withmodel.GetModelWithOrg(r)
+				_ = withmodel.GetModelWithUser(r)
 			})
 		})
 	})
