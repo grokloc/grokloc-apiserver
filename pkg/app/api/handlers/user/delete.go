@@ -7,7 +7,6 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
@@ -17,17 +16,6 @@ import (
 func Delete(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
-
-		auth := withuser.GetAuth(r)
-		authOK := auth == withuser.AuthRoot ||
-			// org owner, user to be deleted is in org
-			auth == withuser.AuthOrg && withuser.GetOrg(r).GetID() == withmodel.GetModelWithOrg(r).GetOrg()
-		if !authOK {
-			logger.Debug("expected auth level not satisfied",
-				"err", app.ErrorInadequateAuthorization)
-			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-			return
-		}
 
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
 		defer acquireCancel()

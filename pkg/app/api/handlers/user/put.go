@@ -45,19 +45,8 @@ func Put(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
-		// specific exceptions to these auth rules will follow for each update case below
+		// some updates have special limitations on auth
 		auth := withuser.GetAuth(r)
-		authOK := auth == withuser.AuthRoot ||
-			// org owner, user to be updated is in org
-			auth == withuser.AuthOrg && withuser.GetOrg(r).GetID() == withmodel.GetModelWithOrg(r).GetOrg() ||
-			// user updating themselves
-			auth == withuser.AuthUser && withuser.GetUser(r).GetID() == withmodel.GetModelWithID(r).GetID()
-		if !authOK {
-			logger.Debug("expected auth level not satisfied",
-				"err", app.ErrorInadequateAuthorization)
-			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-			return
-		}
 
 		modelObject := withmodel.GetModelAny(r)
 		u, ok := modelObject.(*user.User)
