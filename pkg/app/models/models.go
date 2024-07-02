@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// WithID indicates a model has a retrievable ID.
+// WithID indicates a model has a retrievable model ID.
 type WithID interface {
 	GetID() ID
 }
@@ -20,6 +20,11 @@ type WithID interface {
 // WithOrg indicates a model has a retrievable Org ID.
 type WithOrg interface {
 	GetOrg() ID
+}
+
+// WithUser indicates a model has a retrievable User ID.
+type WithUser interface {
+	GetUser() ID
 }
 
 // Kind is a symbol for a model kind.

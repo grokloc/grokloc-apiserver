@@ -35,4 +35,9 @@ func (u *User) GetOrg() models.ID {
 	return u.Org
 }
 
+// GetUser implements models.WithUser.
+func (u *User) GetUser() models.ID {
+	return u.GetID()
+}
+
 const SchemaVersion = 0

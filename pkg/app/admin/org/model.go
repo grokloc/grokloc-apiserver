@@ -23,4 +23,9 @@ func (o *Org) GetOrg() models.ID {
 	return o.GetID()
 }
 
+// GetOrg implements models.WithUser.
+func (o *Org) GetUser() models.ID {
+	return o.Owner
+}
+
 const SchemaVersion = 0
